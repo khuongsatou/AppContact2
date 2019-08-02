@@ -16,7 +16,6 @@ import android.widget.Toast;
 
 import com.example.appcontact.Contact.Contact;
 import com.example.appcontact.Contact.ContactAdapter;
-import com.example.appcontact.Contact.MyOnClickListener;
 import com.example.appcontact.Model.SqliteRender;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
@@ -79,14 +78,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        contactAdapter.setMyOnClickListener(new MyOnClickListener() {
-            @Override
-            public void onClick(Contact contact) {
-                Toast.makeText(MainActivity.this,"OK",Toast.LENGTH_SHORT).show();
-            }
-        });
     }
-
     private void ShowDialogCustom() {
         final Dialog dialog = new Dialog(MainActivity.this);
 
@@ -105,24 +97,22 @@ public class MainActivity extends AppCompatActivity {
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+
+
                 String name = edtContactName.getText().toString();
                 String number = edtContactNumber.getText().toString();
 
                 //add array fist ArrayList
-                long result = sqliteRender.Insert(new Contact(name,number));
-                if (result > 0){
+                sqliteRender.Insert(new Contact(name,number));
+
                     //Update status
-                    //tui bị lỗi chõ này bác xem chỉ tui các fix tui thua
-                    listContact = sqliteRender.SelectListContact();
-                    contactAdapter.notifyItemInserted(listContact.size()-1);
+
+                    listContact.clear();
+                    listContact.addAll(sqliteRender.SelectListContact());
+                    Collections.reverse(listContact);
+                    contactAdapter.notifyDataSetChanged();
                     Toast.makeText(MainActivity.this,"Save Success",Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
-                }else{
-                    Toast.makeText(MainActivity.this,"Save Fail",Toast.LENGTH_SHORT).show();
-                    dialog.dismiss();
-                }
-
-
             }
         });
 
@@ -140,8 +130,8 @@ public class MainActivity extends AppCompatActivity {
 
     private void CreateAdapter() {
         rvList.setHasFixedSize(true);
-        //array reverse 0-> 9 to 9->0
-        listContact = sqliteRender.SelectListContact();
+        listContact = new ArrayList<>();
+        listContact.addAll(sqliteRender.SelectListContact());
         Collections.reverse(listContact);
 
         LinearLayoutManager layoutManager = new LinearLayoutManager(MainActivity.this);

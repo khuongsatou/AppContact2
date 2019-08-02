@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import com.example.appcontact.Contact.Contact;
 
@@ -19,8 +20,9 @@ public class SqliteRender extends SQLiteOpenHelper {
     private static final String COLUMN_ID = "id";
     private static final String COLUMN_NAME = "name";
     private static final String COLUMN_NUMBER = "number";
+    private static final String COLUMN_STATUS_DELETE = "status_delete";
 
-    private final static  String  CREATE_TABLE  = "CREATE TABLE "+TABLE_NAME+"( "+ COLUMN_ID +" INTEGER PRIMARY KEY ,"+ COLUMN_NAME +" VARCHAR ,"+ COLUMN_NUMBER +" VARCHAR )";
+    private final static  String  CREATE_TABLE  = "CREATE TABLE "+TABLE_NAME+"( "+ COLUMN_ID +" INTEGER PRIMARY KEY AUTOINCREMENT,"+ COLUMN_NAME +" VARCHAR ,"+ COLUMN_NUMBER +" VARCHAR, " + COLUMN_STATUS_DELETE + " INTEGER )";
 
     public SqliteRender(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -36,38 +38,43 @@ public class SqliteRender extends SQLiteOpenHelper {
 
     }
 
-    public long Insert(Contact contact){
+    public void Insert(Contact contact){
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_NAME,contact.getName());
         values.put(COLUMN_NUMBER,contact.getNumber());
-        long result = db.insert(TABLE_NAME,null,values);
-        return result;
+        values.put(COLUMN_STATUS_DELETE,0);
+        db.insert(TABLE_NAME,null,values);
+        db.close();
     }
-    public long Update(Contact contact,int position){
+    public void Update(int position,Contact contact){
 
 
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
         values.put(COLUMN_NAME,contact.getName());
         values.put(COLUMN_NUMBER,contact.getNumber());
-        long result = db.update(TABLE_NAME,values,COLUMN_ID + "= ?",new String[]{position+""});
-        return result;
+        db.update(TABLE_NAME,values,COLUMN_ID + "= ?",new String[]{(position)+""});
+        db.close();
     }
 
-    public long Delete(int position){
+    public void Delete(int id){
         SQLiteDatabase db = this.getWritableDatabase();
-        long result = db.delete(TABLE_NAME,COLUMN_ID +"= ?",new String[]{ position+""});
-        return result;
+        ContentValues values = new ContentValues();
+        values.put(COLUMN_STATUS_DELETE,1);
+        db.update(TABLE_NAME,values,COLUMN_ID + "= ?",new String[]{(id)+""});
+        db.close();
     }
 
     public List<Contact> SelectListContact(){
         SQLiteDatabase db = this.getReadableDatabase();
         List<Contact> contactList = new ArrayList<>();
-        Cursor cursor = db.rawQuery("SELECT * FROM "+TABLE_NAME,null);
+        Cursor cursor = db.rawQuery("SELECT * FROM "+TABLE_NAME +" WHERE "+ COLUMN_STATUS_DELETE +" = 0",null);
         if (cursor.getCount() > 0){
             cursor.moveToFirst();
             while (!cursor.isAfterLast()){
+                String id = cursor.getString(cursor.getColumnIndex(COLUMN_ID));
+                Log.d("idContact",id+"");
                 String name = cursor.getString(cursor.getColumnIndex(COLUMN_NAME));
                 String number = cursor.getString(cursor.getColumnIndex(COLUMN_NUMBER));
                 Contact contact = new Contact(name,number);
@@ -76,8 +83,21 @@ public class SqliteRender extends SQLiteOpenHelper {
             }
             cursor.close();
         }
+
         return contactList;
     }
+    public int SelectIDContact(String name,String number){
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.rawQuery("SELECT "+ COLUMN_ID +" FROM "+TABLE_NAME +" WHERE "+ COLUMN_NAME + " = '"+ name +"' AND " + COLUMN_NUMBER + " = '"+number+ "' ",null);
+        int id = 0 ;
+        if (cursor.getCount() > 0){
+            cursor.moveToFirst();
+            id = cursor.getInt(cursor.getColumnIndex(COLUMN_ID));
+            cursor.close();
+        }
+        return id;
+    }
+
 
 
 }

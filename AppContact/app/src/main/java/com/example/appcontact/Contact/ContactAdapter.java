@@ -17,13 +17,13 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.example.appcontact.Model.SqliteRender;
 import com.example.appcontact.R;
 
+import java.util.Collections;
 import java.util.List;
 
 
-public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactHolder> {
+public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactHolder>{
 
     private List<Contact> contactList;
-    private MyOnClickListener myOnClickListener;
     private Context context;
     private  ContactAdapter contactAdapter;
     private SqliteRender sqliteRender;
@@ -32,9 +32,6 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactH
         this.contactAdapter = contactAdapter;
     }
 
-    public void setMyOnClickListener(MyOnClickListener myOnClickListener) {
-        this.myOnClickListener = myOnClickListener;
-    }
 
     public ContactAdapter(Context context,List<Contact> contactList) {
         this.context = context;
@@ -45,7 +42,6 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactH
     @Override
     public ContactAdapter.ContactHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.custom_item_list_contact,parent,false);
-
         return new ContactHolder(view);
     }
 
@@ -81,10 +77,13 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactH
                 String name = edtName.getText().toString();
                 String number = edtNumber.getText().toString();
 
-                sqliteRender.Update(new Contact(name,number),position);
-
-                //contactList.set(position,new Contact(name,number));
+                int id = sqliteRender.SelectIDContact(contactList.get(position).getName(),contactList.get(position).getNumber());
+                contactList.clear();
+                sqliteRender.Update(id,new Contact(name,number));
+                contactList.addAll(sqliteRender.SelectListContact());
+                Collections.reverse(contactList);
                 contactAdapter.notifyDataSetChanged();
+
                 Toast.makeText(context,"Save Success",Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             }
@@ -94,10 +93,13 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactH
             @Override
             public void onClick(View view) {
 
-                //contactList.remove(position);
-                sqliteRender.Delete(position);
-
+                int id = sqliteRender.SelectIDContact(contactList.get(position).getName(),contactList.get(position).getNumber());
+                contactList.clear();
+                sqliteRender.Delete(id);
+                contactList.addAll(sqliteRender.SelectListContact());
+                Collections.reverse(contactList);
                 contactAdapter.notifyDataSetChanged();
+
                 Toast.makeText(context,"Delete Success",Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             }
@@ -112,9 +114,10 @@ public class ContactAdapter extends RecyclerView.Adapter<ContactAdapter.ContactH
         return contactList.size();
     }
 
-    public static class ContactHolder extends  RecyclerView.ViewHolder {
+
+    public class ContactHolder extends  RecyclerView.ViewHolder {
         private TextView tvNameContact,tvNumberContact;
-        public ContactHolder(@NonNull View itemView) {
+        private ContactHolder(@NonNull View itemView) {
             super(itemView);
              tvNameContact = itemView.findViewById(R.id.tvNameContact);
              tvNumberContact =  itemView.findViewById(R.id.tvNumberPhone);
